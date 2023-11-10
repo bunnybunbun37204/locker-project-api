@@ -83,18 +83,32 @@ app.get("/getData", async (req: Request, res: Response) => {
   const googleSheets = google.sheets({ version: "v4", auth: client });
   const spreadsheetsId = "1AbCRoQPZLXkbgAwYpR6JvCDKErv_A1qQWDBAYrmAyMs";
 
+  // Get Meta Data from row
   const metaData = await googleSheets.spreadsheets.get({
     auth: auth,
     spreadsheetId: spreadsheetsId,
   });
 
+  // Get Row Value Data
   const getRows = await googleSheets.spreadsheets.values.get({
     auth: auth,
     spreadsheetId: spreadsheetsId,
     range: "Sheet1",
   });
 
-  res.send(getRows.data);
+  await googleSheets.spreadsheets.values.append({
+    auth: auth,
+    spreadsheetId: spreadsheetsId,
+    range: "Sheet1!A:B",
+    valueInputOption : "USER_ENTERED",
+    insertDataOption : "INSERT_ROWS",
+    requestBody : {
+      "majorDimension" : "ROWS",
+      values : [["PRAEWA", "49"]]
+    }
+  });
+
+  res.send(getRows.data.values);
 });
 
 // Middleware to add custom headers
