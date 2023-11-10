@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-const User = mongoose.model("Post", userSchema);
+const User = mongoose.model("Post", userSchema, 'users');
 
 // Connect to db
 const connectToDatabase = async () => {
@@ -43,6 +43,8 @@ app.get("/", (req: Request, res: Response) => {
 app.post("/login", async (req: Request, res: Response) => {
   try {
     const { username, password, locker } = req.body;
+    console.log(req.body);
+    
     if (!username || !password) {
       return res
         .status(400)
@@ -63,8 +65,10 @@ app.post("/login", async (req: Request, res: Response) => {
       password,
       locker: { locker_id, status },
     });
-
+    console.log("Start");
+    
     await newUser.save();
+    console.log("finish wating");
 
     res.json({ message: "Post created successfully" });
   } catch (error) {
