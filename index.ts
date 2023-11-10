@@ -2,6 +2,7 @@
 import express, { Express, NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
+import { google } from "googleapis";
 
 require("dotenv").config();
 
@@ -43,7 +44,6 @@ app.get("/", (req: Request, res: Response) => {
 app.post("/login", async (req: Request, res: Response) => {
   try {
     const { username, password, locker } = req.body;
-    console.log(req.body);
     
     if (!username || !password) {
       return res
@@ -65,16 +65,40 @@ app.post("/login", async (req: Request, res: Response) => {
       password,
       locker: { locker_id, status },
     });
-    console.log("Start");
     
     await newUser.save();
-    console.log("finish wating");
 
     res.json({ message: "Post created successfully" });
   } catch (error) {
     console.error("Error creating new user:", error);
     res.status(500).json({ error: "Internal server error" });
   }
+});
+
+app.get("/getData", async(req : Request, res : Response) => {
+  const auth = new google.auth.GoogleAuth({
+    keyFile : 'credentials.json',
+    scopes: "https://www.googleapis.com/auth/spreadsheets",
+     
+  });
+  const client = await auth.getClient();
+  
+  const googleSheets = google.sheets({version : "v4", auth:client});
+  const spreadsheetsId = '1AbCRoQPZLXkbgAwYpR6JvCDKErv_A1qQWDBAYrmAyMs';
+
+  const metaData = await googleSheets.spreadsheets.get({
+    auth:auth,
+    spreadsheetId : spreadsheetsId,
+  });
+
+  const getRows = await googleSheets.spreadsheets.values.get({
+    auth : auth,
+    spreadsheetId : spreadsheetsId,
+    range:"Sheet1"
+  });
+
+  res.send(getRows.data);
+  
 });
 
 // Middleware to add custom headers
