@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-const User = mongoose.model("Post", userSchema, 'users');
+const User = mongoose.model("Post", userSchema, "users");
 
 // Connect to db
 const connectToDatabase = async () => {
@@ -44,7 +44,7 @@ app.get("/", (req: Request, res: Response) => {
 app.post("/login", async (req: Request, res: Response) => {
   try {
     const { username, password, locker } = req.body;
-    
+
     if (!username || !password) {
       return res
         .status(400)
@@ -53,11 +53,9 @@ app.post("/login", async (req: Request, res: Response) => {
     const { locker_id, status } = locker;
 
     if (!locker_id || status === undefined) {
-      return res
-        .status(400)
-        .json({
-          error: "Please provide locker_id and status in the locker object",
-        });
+      return res.status(400).json({
+        error: "Please provide locker_id and status in the locker object",
+      });
     }
 
     const newUser = new User({
@@ -65,7 +63,7 @@ app.post("/login", async (req: Request, res: Response) => {
       password,
       locker: { locker_id, status },
     });
-    
+
     await newUser.save();
 
     res.json({ message: "Post created successfully" });
@@ -75,30 +73,28 @@ app.post("/login", async (req: Request, res: Response) => {
   }
 });
 
-app.get("/getData", async(req : Request, res : Response) => {
+app.get("/getData", async (req: Request, res: Response) => {
   const auth = new google.auth.GoogleAuth({
-    keyFile : 'credentials.json',
+    keyFile: "credentials.json",
     scopes: "https://www.googleapis.com/auth/spreadsheets",
-     
   });
   const client = await auth.getClient();
-  
-  const googleSheets = google.sheets({version : "v4", auth:client});
-  const spreadsheetsId = '1AbCRoQPZLXkbgAwYpR6JvCDKErv_A1qQWDBAYrmAyMs';
+
+  const googleSheets = google.sheets({ version: "v4", auth: client });
+  const spreadsheetsId = "1AbCRoQPZLXkbgAwYpR6JvCDKErv_A1qQWDBAYrmAyMs";
 
   const metaData = await googleSheets.spreadsheets.get({
-    auth:auth,
-    spreadsheetId : spreadsheetsId,
+    auth: auth,
+    spreadsheetId: spreadsheetsId,
   });
 
   const getRows = await googleSheets.spreadsheets.values.get({
-    auth : auth,
-    spreadsheetId : spreadsheetsId,
-    range:"Sheet1"
+    auth: auth,
+    spreadsheetId: spreadsheetsId,
+    range: "Sheet1",
   });
 
   res.send(getRows.data);
-  
 });
 
 // Middleware to add custom headers
