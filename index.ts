@@ -1,6 +1,7 @@
 // src/app.ts
 import express, { Express, NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
+import cors from 'cors';
 import bodyParser from "body-parser";
 import { google } from "googleapis";
 
@@ -13,9 +14,14 @@ const userSchema = new mongoose.Schema({
   password: String,
   locker: {
     locker_id: String,
-    status: Boolean,
+    status: String,
   },
 });
+
+const corsOptions = {
+  origin: 'http://localhost:3000/',
+};
+
 
 const User = mongoose.model("Post", userSchema, "users");
 
@@ -50,6 +56,15 @@ const app: Express = express();
 const port: number = 8000;
 
 app.use(bodyParser.json());
+// Middleware to add custom headers
+app.use((req : Request, res : Response, next) => {
+  res.setHeader('Content-Type','application/json');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS, PATCH, DELETE, POST, PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  next();
+});
 
 app.get("/", (req: Request, res: Response) => {
   res.json({
@@ -57,7 +72,7 @@ app.get("/", (req: Request, res: Response) => {
   });
 });
 
-app.post("/login", async (req: Request, res: Response) => {
+app.post("/signin", async (req: Request, res: Response) => {
   try {
     const { username, password, locker } = req.body;
 
@@ -82,19 +97,44 @@ app.post("/login", async (req: Request, res: Response) => {
 
     await newUser.save();
 
-    res.json({ message: "Post created successfully" });
+    res.json({ message: "User created successfully" });
   } catch (error) {
     console.error("Error creating new user:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
+app.post("/getUser", async (req: Request, res: Response) => {
+  try {
+    const { username, password } = req.body;
+    console.log("REQ", req.body);
+    
+
+    if (!username || !password) {
+      return res
+        .status(400)
+        .json({ error: "Please provide both username and password" });
+    }
+
+    const user = await User.findOne({ username, password });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const { locker } = user;
+
+    res.json({
+      username: user.username,
+      locker,
+    });
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.get("/getData", async (req: Request, res: Response) => {
-  // Get Meta Data from row
-  const metaData = await googleSheets.spreadsheets.get({
-    auth: auth,
-    spreadsheetId: spreadsheetsId,
-  });
 
   // Get Row Value Data
   const getRows = await googleSheets.spreadsheets.values.get({
@@ -138,20 +178,5 @@ app.post("/booked", async (req: Request, res: Response) => {
   res.send("Book success").status(200);
 });
 
-// Middleware to add custom headers
-app.use((req: Request, res: Response, next: NextFunction) => {
-  res.setHeader("Content-Type", "application/json");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, OPTIONS, PATCH, DELETE, POST, PUT"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
-  );
-  next();
-});
 
 app.listen(port, () => console.log(`Application is running on port ${port}`));
