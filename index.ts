@@ -28,7 +28,23 @@ const connectToDatabase = async () => {
     console.error("Error connecting to MongoDB:", error);
   }
 };
+const auth = new google.auth.GoogleAuth({
+  keyFile: "credentials.json",
+  scopes: "https://www.googleapis.com/auth/spreadsheets",
+});
+const client = await auth
+  .getClient()
+  .then(() => {
+    console.log("Connect to google client");
+  })
+  .catch((error) => {
+    console.log("Error connect to google", error);
+  });
 
+connectToDatabase();
+
+const googleSheets = google.sheets({ version: "v4", auth: client });
+const spreadsheetsId = "1AbCRoQPZLXkbgAwYpR6JvCDKErv_A1qQWDBAYrmAyMs";
 const app: Express = express();
 
 const port: number = 8000;
@@ -74,15 +90,6 @@ app.post("/login", async (req: Request, res: Response) => {
 });
 
 app.get("/getData", async (req: Request, res: Response) => {
-  const auth = new google.auth.GoogleAuth({
-    keyFile: "credentials.json",
-    scopes: "https://www.googleapis.com/auth/spreadsheets",
-  });
-  const client = await auth.getClient();
-
-  const googleSheets = google.sheets({ version: "v4", auth: client });
-  const spreadsheetsId = "1AbCRoQPZLXkbgAwYpR6JvCDKErv_A1qQWDBAYrmAyMs";
-
   // Get Meta Data from row
   const metaData = await googleSheets.spreadsheets.get({
     auth: auth,
@@ -96,19 +103,39 @@ app.get("/getData", async (req: Request, res: Response) => {
     range: "Sheet1",
   });
 
-  await googleSheets.spreadsheets.values.append({
+  res.send(getRows.data.values);
+});
+
+app.post("/booked", async (req: Request, res: Response) => {
+  const { username, locker_id, isBooked } = req.body;
+  if (!username || !locker_id || !isBooked) {
+    return res.status(400).json({
+      error: "Please provide locker_id and username in the req body",
+    });
+  }
+
+  const updatedValue = [locker_id];
+
+  const getRows = await googleSheets.spreadsheets.values.get({
     auth: auth,
     spreadsheetId: spreadsheetsId,
-    range: "Sheet1!A:B",
-    valueInputOption : "USER_ENTERED",
-    insertDataOption : "INSERT_ROWS",
-    requestBody : {
-      "majorDimension" : "ROWS",
-      values : [["PRAEWA", "49"]]
-    }
+    range: "Sheet1",
   });
+  const data = getRows.data.values;
+  const updatedb = data?.map((r) =>
+    updatedValue.includes(r[0]) ? [r[0], isBooked] : r
+  );
 
-  res.send(getRows.data.values);
+  await googleSheets.spreadsheets.values.update({
+    auth: auth,
+    spreadsheetId: spreadsheetsId,
+    range: "Sheet1",
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: updatedb,
+    },
+  });
+  res.send("Book success").status(200);
 });
 
 // Middleware to add custom headers
@@ -128,4 +155,3 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 app.listen(port, () => console.log(`Application is running on port ${port}`));
-connectToDatabase();
