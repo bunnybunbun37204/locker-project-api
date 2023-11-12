@@ -122,17 +122,40 @@ app.post("/getUser", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const { locker } = user;
-
     res.json({
-      username: user.username,
-      locker,
+      id: user._id,
     });
   } catch (error) {
     console.error("Error fetching user:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+app.get("/getUser/:id", async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id;
+
+    if (!userId) {
+      return res.status(400).json({ error: "Please provide a user ID" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({
+      id: user._id,
+      username: user.username,
+      locker: user.locker,
+    });
+  } catch (error) {
+    console.error("Error fetching user by ID:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 app.get("/getData", async (req: Request, res: Response) => {
 
