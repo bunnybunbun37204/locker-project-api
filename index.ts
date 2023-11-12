@@ -1,7 +1,6 @@
 // src/app.ts
 import express, { Express, NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
-import cors from 'cors';
 import bodyParser from "body-parser";
 import { google } from "googleapis";
 
@@ -10,6 +9,7 @@ require("dotenv").config();
 const URI = process.env.URI ?? "your_default_mongodb_uri";
 
 const userSchema = new mongoose.Schema({
+  email: String,
   username: String,
   password: String,
   locker: {
@@ -17,11 +17,6 @@ const userSchema = new mongoose.Schema({
     status: String,
   },
 });
-
-const corsOptions = {
-  origin: 'http://localhost:3000/',
-};
-
 
 const User = mongoose.model("Post", userSchema, "users");
 
@@ -57,12 +52,18 @@ const port: number = 8000;
 
 app.use(bodyParser.json());
 // Middleware to add custom headers
-app.use((req : Request, res : Response, next) => {
-  res.setHeader('Content-Type','application/json');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS, PATCH, DELETE, POST, PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+app.use((req: Request, res: Response, next) => {
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, OPTIONS, PATCH, DELETE, POST, PUT"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+  );
   next();
 });
 
@@ -72,14 +73,18 @@ app.get("/", (req: Request, res: Response) => {
   });
 });
 
-app.post("/signin", async (req: Request, res: Response) => {
+app.post("/signUp", async (req: Request, res: Response) => {
   try {
-    const { username, password, locker } = req.body;
+    const { email, username, password, locker } = req.body;
 
-    if (!username || !password) {
+    if (!username || !password || !email) {
       return res
         .status(400)
         .json({ error: "Plz provide username or password" });
+    }
+    const user = await User.findOne({ email });
+    if (user) {
+      return res.status(200).json({ alert: "user exist", id: user._id });
     }
     const { locker_id, status } = locker;
 
@@ -90,6 +95,7 @@ app.post("/signin", async (req: Request, res: Response) => {
     }
 
     const newUser = new User({
+      email,
       username,
       password,
       locker: { locker_id, status },
@@ -106,17 +112,16 @@ app.post("/signin", async (req: Request, res: Response) => {
 
 app.post("/getUser", async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
     console.log("REQ", req.body);
-    
 
-    if (!username || !password) {
+    if (!email || !password) {
       return res
         .status(400)
-        .json({ error: "Please provide both username and password" });
+        .json({ error: "Please provide both email and password" });
     }
 
-    const user = await User.findOne({ username, password });
+    const user = await User.findOne({ email, password });
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -156,9 +161,7 @@ app.get("/getUser/:id", async (req: Request, res: Response) => {
   }
 });
 
-
 app.get("/getData", async (req: Request, res: Response) => {
-
   // Get Row Value Data
   const getRows = await googleSheets.spreadsheets.values.get({
     auth: auth,
@@ -200,6 +203,5 @@ app.post("/booked", async (req: Request, res: Response) => {
   });
   res.send("Book success").status(200);
 });
-
 
 app.listen(port, () => console.log(`Application is running on port ${port}`));
