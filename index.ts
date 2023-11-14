@@ -161,6 +161,11 @@ app.get("/getUser/:id", async (req: Request, res: Response) => {
   }
 });
 
+interface Locker {
+  locker_id: string;
+  locker_status: string;
+}
+
 app.get("/getData", async (req: Request, res: Response) => {
   // Get Row Value Data
   const getRows = await googleSheets.spreadsheets.values.get({
@@ -168,8 +173,17 @@ app.get("/getData", async (req: Request, res: Response) => {
     spreadsheetId: spreadsheetsId,
     range: "Sheet1",
   });
+  const result = getRows.data.values;
+  result?.shift();
+  let datas: Locker[] = [];
+  result?.map((d: string[]) =>
+    datas.push({
+      locker_id: d[0],
+      locker_status: d[1],
+    })
+  );
 
-  res.send(getRows.data.values);
+  res.status(200).send({ data: datas });
 });
 
 app.post("/booked", async (req: Request, res: Response) => {
@@ -201,7 +215,7 @@ app.post("/booked", async (req: Request, res: Response) => {
       values: updatedb,
     },
   });
-  res.send("Book success").status(200);
+  res.send({ message: "success" }).status(200);
 });
 
 app.listen(port, () => console.log(`Application is running on port ${port}`));
