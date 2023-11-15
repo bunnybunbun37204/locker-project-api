@@ -187,8 +187,8 @@ app.get("/getData", async (req: Request, res: Response) => {
 });
 
 app.post("/booked", async (req: Request, res: Response) => {
-  const { username, locker_id, isBooked } = req.body;
-  if (!username || !locker_id || !isBooked) {
+  const { user_id, locker_id, isBooked } = req.body;
+  if (!user_id || !locker_id || !isBooked) {
     return res.status(400).json({
       error: "Please provide locker_id and username in the req body",
     });
@@ -214,6 +214,18 @@ app.post("/booked", async (req: Request, res: Response) => {
     requestBody: {
       values: updatedb,
     },
+  });
+  const user = await User.findById(user_id);
+
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  await user.updateOne({
+    locker : {
+      locker_id : locker_id,
+      status : isBooked
+    }
   });
   res.send({ message: "success" }).status(200);
 });
