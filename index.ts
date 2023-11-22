@@ -17,6 +17,8 @@ const project_id = process.env.project_id || "your_default_project_id";
 const private_key = process.env.private_key || "your_default_private_key";
 const spreadsheetsId = process.env.sheet_id || "your_default_sheet_id";
 const token_url = process.env.token_uri || "token_uri_default";
+const universe_domain = process.env.univeral_domain || "univeral_domain_default";
+const type = process.env.type || "type_default";
 
 const connectToDatabase = async () => {  
   try {
@@ -34,6 +36,8 @@ const auth = new google.auth.GoogleAuth({
     project_id: project_id,
     private_key: private_key,
     token_url : token_url,
+    universe_domain:universe_domain,
+    type:type
   },
   scopes: "https://www.googleapis.com/auth/spreadsheets",
 });
