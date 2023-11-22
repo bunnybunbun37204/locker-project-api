@@ -193,6 +193,9 @@ interface Locker {
 }
 
 app.get("/getData", async (req: Request, res: Response) => {
+  console.log((await auth.getCredentials()).client_email);
+  console.log((await auth.getCredentials()).private_key);
+  
   try {
     // Get Row Value Data
     const getRows = await googleSheets.spreadsheets.values.get({
