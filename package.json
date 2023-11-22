@@ -2,6 +2,9 @@
   "name": "locker-api",
   "module": "index.ts",
   "type": "module",
+  "scripts": {
+    "start": "bun run api/index.ts"
+  },
   "devDependencies": {
     "bun-types": "latest"
   },
