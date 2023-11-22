@@ -7,6 +7,10 @@ import { google } from "googleapis";
 require("dotenv").config();
 
 const URI = process.env.URI ?? "your_default_mongodb_uri";
+const client_id = process.env.client_id ?? "your_deafult_client_id";
+const client_email = process.env.client_email ?? "your_default_client_email";
+const project_id = process.env.project_id ?? "your_default_project_id";
+const private_key = process.env.private_key ?? "your_default_private_key";
 
 const userSchema = new mongoose.Schema({
   email: String,
@@ -30,7 +34,12 @@ const connectToDatabase = async () => {
   }
 };
 const auth = new google.auth.GoogleAuth({
-  keyFile: "credentials.json",
+  credentials: {
+    client_id: client_id,
+    client_email: client_email,
+    project_id: project_id,
+    private_key: private_key,
+  },
   scopes: "https://www.googleapis.com/auth/spreadsheets",
 });
 const client = await auth
@@ -52,7 +61,7 @@ const port: number = 8000;
 
 app.use(bodyParser.json());
 // Middleware to add custom headers
-app.use((req: Request, res: Response, next) => {
+app.use((req: Request, res: Response, next : NextFunction) => {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Origin", "*");
