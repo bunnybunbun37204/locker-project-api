@@ -1,16 +1,73 @@
-// src/app.ts
 import express, { Express, NextFunction, Request, Response } from "express";
-import mongoose from "mongoose";
+import mongoose, { ConnectOptions } from "mongoose";
 import bodyParser from "body-parser";
 import { google } from "googleapis";
+import dotenv from "dotenv";
+import cors from "cors";
+import helmet from "helmet";
+import { check, validationResult } from "express-validator";
+import cookieParser from "cookie-parser";
 
-require("dotenv").config();
+dotenv.config();
 
-const URI = process.env.URI ?? "your_default_mongodb_uri";
-const client_id = process.env.client_id ?? "your_deafult_client_id";
-const client_email = process.env.client_email ?? "your_default_client_email";
-const project_id = process.env.project_id ?? "your_default_project_id";
-const private_key = process.env.private_key ?? "your_default_private_key";
+const URI = process.env.URI || "your_default_mongodb_uri";
+const client_id = process.env.client_id || "your_default_client_id";
+const client_email = process.env.client_email || "your_default_client_email";
+const project_id = process.env.project_id || "your_default_project_id";
+const private_key = process.env.private_key || "your_default_private_key";
+const spreadsheetsId = process.env.sheet_id || "your_default_sheet_id";
+
+const connectToDatabase = async () => {  
+  try {
+    await mongoose.connect(URI);
+    console.log("Connected to MongoDB 🚀");
+  } catch (error) {
+    console.error("💀 Error connecting to MongoDB:", error);
+  }
+};
+
+const auth = new google.auth.GoogleAuth({
+  credentials: {
+    client_id: client_id,
+    client_email: client_email,
+    project_id: project_id,
+    private_key: private_key,
+  },
+  scopes: "https://www.googleapis.com/auth/spreadsheets",
+});
+
+connectToDatabase();
+
+const client = await auth
+  .getClient()
+  .then(() => console.log("Connect to google api 🚀"))
+  .catch((err) => console.log("💀 error ", err));
+
+const googleSheets = google.sheets({
+  version: "v4",
+  auth: client,
+});
+const app: Express = express();
+
+const port: number = 8000;
+
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(helmet());
+app.use(cookieParser());
+
+app.use(bodyParser.json());
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.setHeader("Content-Type", "application/json");
+  next();
+});
+
+// Validation middleware
+const validateSignUp = [
+  check("email").isEmail(),
+  check("username").isLength({ min: 5 }),
+  check("password").isLength({ min: 6 }),
+];
 
 const userSchema = new mongoose.Schema({
   email: String,
@@ -24,65 +81,20 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("Post", userSchema, "users");
 
-// Connect to db
-const connectToDatabase = async () => {
-  try {
-    await mongoose.connect(URI);
-    console.log("Connected to MongoDB");
-  } catch (error) {
-    console.error("Error connecting to MongoDB:", error);
-  }
-};
-const auth = new google.auth.GoogleAuth({
-  credentials: {
-    client_id: client_id,
-    client_email: client_email,
-    project_id: project_id,
-    private_key: private_key,
-  },
-  scopes: "https://www.googleapis.com/auth/spreadsheets",
-});
-const client = await auth
-  .getClient()
-  .then(() => {
-    console.log("Connect to google client");
-  })
-  .catch((error) => {
-    console.log("Error connect to google", error);
-  });
-
-connectToDatabase();
-
-const googleSheets = google.sheets({ version: "v4", auth: client });
-const spreadsheetsId = "1AbCRoQPZLXkbgAwYpR6JvCDKErv_A1qQWDBAYrmAyMs";
-const app: Express = express();
-
-const port: number = 8000;
-
-app.use(bodyParser.json());
-// Middleware to add custom headers
-app.use((req: Request, res: Response, next: NextFunction) => {
-  res.setHeader("Content-Type", "application/json");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, OPTIONS, PATCH, DELETE, POST, PUT"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
-  );
-  next();
-});
-
 app.get("/", (req: Request, res: Response) => {
   res.json({
-    message: "Hello Express + TypeScirpt!!",
+    message: "Hello Express + TypeScript!!",
   });
 });
 
-app.post("/signUp", async (req: Request, res: Response) => {
+app.post("/signUp", validateSignUp, async (req: Request, res: Response) => {
+  // Handle validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  // Rest of the signup logic
   try {
     const { email, username, password, locker } = req.body;
 
@@ -91,10 +103,12 @@ app.post("/signUp", async (req: Request, res: Response) => {
         .status(400)
         .json({ error: "Plz provide username or password" });
     }
+
     const user = await User.findOne({ email });
     if (user) {
       return res.status(200).json({ alert: "user exist", id: user._id });
     }
+
     const { locker_id, status } = locker;
 
     if (!locker_id || status === undefined) {
@@ -122,7 +136,6 @@ app.post("/signUp", async (req: Request, res: Response) => {
 app.post("/getUser", async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    console.log("REQ", req.body);
 
     if (!email || !password) {
       return res
@@ -239,4 +252,4 @@ app.post("/booked", async (req: Request, res: Response) => {
   res.send({ message: "success" }).status(200);
 });
 
-app.listen(port, () => console.log(`Application is running on port ${port}`));
+app.listen(port, () => console.log(`Application is running on port ${port} 🚀`));
