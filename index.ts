@@ -31,21 +31,22 @@ const connectToDatabase = async () => {
 };
 
 const auth : Auth.GoogleAuth = new google.auth.GoogleAuth({
-  credentials: {
-    client_id: client_id,
-    client_email: client_email,
-    project_id: project_id,
-    private_key: private_key,
-    token_url: token_url,
-    universe_domain: universe_domain,
-    type: type,
-  },
+  // credentials: {
+  //   client_id: client_id,
+  //   client_email: client_email,
+  //   project_id: project_id,
+  //   private_key: private_key,
+  //   token_url: token_url,
+  //   universe_domain: universe_domain,
+  //   type: type,
+  // },
+  keyFile: "credentials.json",
   scopes: "https://www.googleapis.com/auth/spreadsheets",
 });
 
 connectToDatabase();
 
-const client : Auth.JWT = await auth.getClient();
+const client = await auth.getClient();
 
 const googleSheets = google.sheets({
   version: "v4",
