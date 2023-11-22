@@ -1,7 +1,7 @@
 import express, { Express, NextFunction, Request, Response } from "express";
 import mongoose, { ConnectOptions } from "mongoose";
 import bodyParser from "body-parser";
-import { google } from "googleapis";
+import { Auth, google } from "googleapis";
 import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
@@ -30,7 +30,7 @@ const connectToDatabase = async () => {
   }
 };
 
-const auth = new google.auth.GoogleAuth({
+const auth : Auth.GoogleAuth = new google.auth.GoogleAuth({
   credentials: {
     client_id: client_id,
     client_email: client_email,
@@ -45,10 +45,7 @@ const auth = new google.auth.GoogleAuth({
 
 connectToDatabase();
 
-const client = await auth
-  .getClient()
-  .then(() => console.log("Connect to google api 🚀"))
-  .catch((err) => console.log("💀 error ", err));
+const client : Auth.JWT = await auth.getClient();
 
 const googleSheets = google.sheets({
   version: "v4",
