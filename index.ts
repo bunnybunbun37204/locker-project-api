@@ -17,10 +17,11 @@ const project_id = process.env.project_id || "your_default_project_id";
 const private_key = process.env.private_key || "your_default_private_key";
 const spreadsheetsId = process.env.sheet_id || "your_default_sheet_id";
 const token_url = process.env.token_uri || "token_uri_default";
-const universe_domain = process.env.univeral_domain || "univeral_domain_default";
+const universe_domain =
+  process.env.univeral_domain || "univeral_domain_default";
 const type = process.env.type || "type_default";
 
-const connectToDatabase = async () => {  
+const connectToDatabase = async () => {
   try {
     await mongoose.connect(URI);
     console.log("Connected to MongoDB 🚀");
@@ -35,9 +36,9 @@ const auth = new google.auth.GoogleAuth({
     client_email: client_email,
     project_id: project_id,
     private_key: private_key,
-    token_url : token_url,
-    universe_domain:universe_domain,
-    type:type
+    token_url: token_url,
+    universe_domain: universe_domain,
+    type: type,
   },
   scopes: "https://www.googleapis.com/auth/spreadsheets",
 });
@@ -195,24 +196,34 @@ interface Locker {
 }
 
 app.get("/getData", async (req: Request, res: Response) => {
-  // Get Row Value Data
-  const getRows = await googleSheets.spreadsheets.values.get({
-    auth: auth,
-    spreadsheetId: spreadsheetsId,
-    range: "Sheet1",
-  });
-  const result = getRows.data.values;
-  result?.shift();
-  let datas: Locker[] = [];
-  result?.map((d: string[]) =>
-    datas.push({
-      locker_id: d[0],
-      locker_status: d[1],
-    })
-  );
+  try {
+    // Get Row Value Data
+    const getRows = await googleSheets.spreadsheets.values.get({
+      auth: auth,
+      spreadsheetId: spreadsheetsId,
+      range: "Sheet1",
+    });
 
-  res.status(200).send({ data: datas });
+    console.log("Connect to sheet 🚀");
+    
+
+    const result = getRows.data.values;
+    result?.shift();
+    let datas: Locker[] = [];
+    result?.map((d: string[]) =>
+      datas.push({
+        locker_id: d[0],
+        locker_status: d[1],
+      })
+    );
+
+    res.status(200).send({ data: datas });
+  } catch (error) {
+    console.error("💀 Error fetching data from Google Sheets:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
+
 
 app.post("/booked", async (req: Request, res: Response) => {
   const { user_id, locker_id, isBooked } = req.body;
@@ -258,4 +269,6 @@ app.post("/booked", async (req: Request, res: Response) => {
   res.send({ message: "success" }).status(200);
 });
 
-app.listen(port, () => console.log(`Application is running on port ${port} 🚀`));
+app.listen(port, () =>
+  console.log(`Application is running on port ${port} 🚀`)
+);
