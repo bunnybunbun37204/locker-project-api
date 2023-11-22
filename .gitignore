@@ -178,3 +178,6 @@ dist
 node_modules
 credentials.json
 
+
+# Local Netlify folder
+.netlify

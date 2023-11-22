@@ -1,4 +1,4 @@
-import express, { Express, NextFunction, Request, Response } from "express";
+import express, { Express, NextFunction, Request, Response, Router } from "express";
 import mongoose, { ConnectOptions } from "mongoose";
 import bodyParser from "body-parser";
 import { Auth, google } from "googleapis";
@@ -7,6 +7,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { check, validationResult } from "express-validator";
 import cookieParser from "cookie-parser";
+import serverless from "serverless-http";
 
 dotenv.config();
 
@@ -269,6 +270,8 @@ app.post("/booked", async (req: Request, res: Response) => {
   res.send({ message: "success" }).status(200);
 });
 
-app.listen(port, () =>
-  console.log(`Application is running on port ${port} 🚀`)
-);
+
+const router = Router();
+app.use("/api/", router);
+
+export const handler = serverless(app);
