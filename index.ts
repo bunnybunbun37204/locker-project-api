@@ -61,7 +61,7 @@ const port: number = 8000;
 
 app.use(bodyParser.json());
 // Middleware to add custom headers
-app.use((req: Request, res: Response, next : NextFunction) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -231,10 +231,10 @@ app.post("/booked", async (req: Request, res: Response) => {
   }
 
   await user.updateOne({
-    locker : {
-      locker_id : locker_id,
-      status : isBooked
-    }
+    locker: {
+      locker_id: locker_id,
+      status: isBooked,
+    },
   });
   res.send({ message: "success" }).status(200);
 });
