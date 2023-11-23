@@ -3,7 +3,6 @@ import express, {
   NextFunction,
   Request,
   Response,
-  Router,
 } from "express";
 import mongoose, { ConnectOptions } from "mongoose";
 import bodyParser from "body-parser";
@@ -200,7 +199,6 @@ router.get("/getData", async (req: Request, res: Response) => {
     version: "v4",
     auth: client,
   });
-
 
   try {
     // Get Row Value Data
