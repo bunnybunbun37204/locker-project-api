@@ -1,4 +1,10 @@
-import express, { Express, NextFunction, Request, Response, Router } from "express";
+import express, {
+  Express,
+  NextFunction,
+  Request,
+  Response,
+  Router,
+} from "express";
 import mongoose, { ConnectOptions } from "mongoose";
 import bodyParser from "body-parser";
 import { Auth, google } from "googleapis";
@@ -15,12 +21,12 @@ const URI = process.env.URI || "your_default_mongodb_uri";
 const client_id = process.env.client_id || "your_default_client_id";
 const client_email = process.env.client_email || "your_default_client_email";
 const project_id = process.env.project_id || "your_default_project_id";
-const private_key = process.env.private_key || "your_default_private_key";
 const spreadsheetsId = process.env.sheet_id || "your_default_sheet_id";
 const token_url = process.env.token_uri || "token_uri_default";
 const universe_domain =
   process.env.univeral_domain || "univeral_domain_default";
 const type = process.env.type || "type_default";
+const secret = process.env.private_key?.replace(/\\n/g, "\n");
 
 const connectToDatabase = async () => {
   try {
@@ -31,30 +37,24 @@ const connectToDatabase = async () => {
   }
 };
 
-const auth : Auth.GoogleAuth = new google.auth.GoogleAuth({
+const auth = new google.auth.GoogleAuth({
   credentials: {
     client_id: client_id,
     client_email: client_email,
     project_id: project_id,
-    private_key: private_key,
+    private_key: secret,
     token_url: token_url,
     universe_domain: universe_domain,
     type: type,
   },
+  //keyFile:"credentials.json",
   scopes: "https://www.googleapis.com/auth/spreadsheets",
 });
 
 connectToDatabase();
 
-const client = await auth.getClient();
-
-const googleSheets = google.sheets({
-  version: "v4",
-  auth: client,
-});
 const app: Express = express();
-
-const port: number = 8000;
+const router = express.Router();
 
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(helmet());
@@ -86,13 +86,13 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("Post", userSchema, "users");
 
-app.get("/", (req: Request, res: Response) => {
+router.get("/", (req: Request, res: Response) => {
   res.json({
     message: "Hello Express + TypeScript!!",
   });
 });
 
-app.post("/signUp", validateSignUp, async (req: Request, res: Response) => {
+router.post("/signUp", validateSignUp, async (req: Request, res: Response) => {
   // Handle validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -138,7 +138,7 @@ app.post("/signUp", validateSignUp, async (req: Request, res: Response) => {
   }
 });
 
-app.post("/getUser", async (req: Request, res: Response) => {
+router.post("/getUser", async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -163,7 +163,7 @@ app.post("/getUser", async (req: Request, res: Response) => {
   }
 });
 
-app.get("/getUser/:id", async (req: Request, res: Response) => {
+router.get("/getUser/:id", async (req: Request, res: Response) => {
   try {
     const userId = req.params.id;
 
@@ -193,10 +193,15 @@ interface Locker {
   locker_status: string;
 }
 
-app.get("/getData", async (req: Request, res: Response) => {
-  console.log((await auth.getCredentials()).client_email);
-  console.log((await auth.getCredentials()).private_key);
-  
+router.get("/getData", async (req: Request, res: Response) => {
+  const client = await auth.getClient();
+
+  const googleSheets = google.sheets({
+    version: "v4",
+    auth: client,
+  });
+
+
   try {
     // Get Row Value Data
     const getRows = await googleSheets.spreadsheets.values.get({
@@ -206,7 +211,6 @@ app.get("/getData", async (req: Request, res: Response) => {
     });
 
     console.log("Connect to sheet 🚀");
-    
 
     const result = getRows.data.values;
     result?.shift();
@@ -225,14 +229,20 @@ app.get("/getData", async (req: Request, res: Response) => {
   }
 });
 
-
-app.post("/booked", async (req: Request, res: Response) => {
+router.post("/booked", async (req: Request, res: Response) => {
   const { user_id, locker_id, isBooked } = req.body;
   if (!user_id || !locker_id || !isBooked) {
     return res.status(400).json({
       error: "Please provide locker_id and username in the req body",
     });
   }
+
+  const client = await auth.getClient();
+
+  const googleSheets = google.sheets({
+    version: "v4",
+    auth: client,
+  });
 
   const updatedValue = [locker_id];
 
@@ -270,8 +280,6 @@ app.post("/booked", async (req: Request, res: Response) => {
   res.send({ message: "success" }).status(200);
 });
 
-
-const router = Router();
-app.use("/api/", router);
+app.use(`/.netlify/functions/api`, router);
 
 export const handler = serverless(app);
