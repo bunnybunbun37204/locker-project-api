@@ -278,6 +278,6 @@ router.post("/booked", async (req: Request, res: Response) => {
   res.send({ message: "success" }).status(200);
 });
 
-app.use("/", router);
+app.use(`/.netlify/functions/api`, router);
 
 export const handler = serverless(app);
