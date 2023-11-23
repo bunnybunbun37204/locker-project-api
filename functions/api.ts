@@ -4,9 +4,9 @@ import express, {
   Request,
   Response,
 } from "express";
-import mongoose, { ConnectOptions } from "mongoose";
+import mongoose from "mongoose";
 import bodyParser from "body-parser";
-import { Auth, google } from "googleapis";
+import { google } from "googleapis";
 import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
@@ -58,9 +58,7 @@ const router = express.Router();
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(helmet());
 app.use(cookieParser());
-
 app.use(bodyParser.json());
-
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader("Content-Type", "application/json");
   next();
