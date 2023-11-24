@@ -119,7 +119,7 @@ router.post("/signUp", validateSignUp, async (req: Request, res: Response) => {
 
   // Rest of the signup logic
   try {
-    const { email, username, password, locker } = req.body;
+    const { email, username, password } = req.body;
 
     if (!username || !password || !email) {
       return res
@@ -132,9 +132,14 @@ router.post("/signUp", validateSignUp, async (req: Request, res: Response) => {
       return res.status(200).json({ alert: "user exist", id: user._id });
     }
 
-    const { locker_id, status } = locker;
+    const _locker : Locker = {
+      locker_id : "0",
+      locker_status : "FALSE"
+    };
 
-    if (!locker_id || status === undefined) {
+    const { locker_id, locker_status } =_locker;
+
+    if (!locker_id || locker_status === undefined) {
       return res.status(400).json({
         error: "Please provide locker_id and status in the locker object",
       });
@@ -144,7 +149,7 @@ router.post("/signUp", validateSignUp, async (req: Request, res: Response) => {
       email,
       username,
       password,
-      locker: { locker_id, status },
+      locker: { locker_id, locker_status },
     });
 
     await newUser.save();
