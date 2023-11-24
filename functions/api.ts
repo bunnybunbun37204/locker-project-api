@@ -13,6 +13,7 @@ import requestIp from "request-ip";
 
 dotenv.config();
 
+let client: any;
 const URI = process.env.URI || "your_default_mongodb_uri";
 const client_id = process.env.client_id || "your_default_client_id";
 const client_email = process.env.client_email || "your_default_client_email";
@@ -47,6 +48,15 @@ const auth = new google.auth.GoogleAuth({
   scopes: "https://www.googleapis.com/auth/spreadsheets",
 });
 
+const connectToGoogleSheet = async () => {
+  try {
+    client = await auth.getClient();
+    console.log("Connected to google client 🚀");
+  } catch (error) {
+    console.log("error cliet", error);
+  }
+};
+
 // Rate limiting configuration
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -58,6 +68,7 @@ const limiter = rateLimit({
 });
 
 connectToDatabase();
+connectToGoogleSheet();
 
 const app: Express = express();
 const router = express.Router();
@@ -201,8 +212,6 @@ interface Locker {
 }
 
 router.get("/getData", async (req: Request, res: Response) => {
-  const client = await auth.getClient();
-
   const googleSheets = google.sheets({
     version: "v4",
     auth: client,
@@ -227,7 +236,6 @@ router.get("/getData", async (req: Request, res: Response) => {
         locker_status: d[1],
       })
     );
-
     res.status(200).send({ data: datas });
   } catch (error) {
     console.error("💀 Error fetching data from Google Sheets:", error);
@@ -242,8 +250,6 @@ router.post("/booked", async (req: Request, res: Response) => {
       error: "Please provide locker_id and username in the req body",
     });
   }
-
-  const client = await auth.getClient();
 
   const googleSheets = google.sheets({
     version: "v4",
