@@ -7,7 +7,6 @@ import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import requestIp from "request-ip";
 import { CLIENT } from "./lib/constants";
-import { connectToDatabase } from "./mongodbapi/connectToDb";
 import lockerApi from "./locker/api";
 
 // Rate limiting configuration
@@ -19,8 +18,6 @@ const limiter = rateLimit({
     return req.clientIp || "default ip"; // IP address from requestIp.mw(), as opposed to req.ip
   },
 });
-
-connectToDatabase();
 
 const app: Express = express();
 

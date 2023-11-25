@@ -4,6 +4,9 @@ import { getGoogleSheets } from "../googleapi/constants";
 import { connectToGoogleSheet } from "../googleapi/connectToClient";
 import { booked, getDataRows } from "../googleapi/api";
 import { getUserById, singIn, singUp } from "../mongodbapi/api";
+import { connectToDatabase } from "../mongodbapi/connectToDb";
+
+connectToDatabase();
 
 const lockerApi = express.Router();
 const client: any = connectToGoogleSheet();
