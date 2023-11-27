@@ -7,7 +7,8 @@ import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import requestIp from "request-ip";
 import { CLIENT } from "./lib/constants";
-import lockerApi from "./locker/api";
+import lockerApi from "./services/locker";
+import meetingApi from "./services/meeting";
 
 // Rate limiting configuration
 const limiter = rateLimit({
@@ -34,5 +35,6 @@ app.use(limiter);
 app.use(morgan("combined"));
 
 app.use(`/.netlify/functions/api/locker`, lockerApi);
+app.use(`/.netlify/functions/api/meeting`, meetingApi);
 
 export const handler = serverless(app);

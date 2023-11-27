@@ -26,7 +26,7 @@ const validateGetUser = [
 
 lockerApi.get("/", (req: Request, res: Response) => {
   res.json({
-    message: "Hello Express + TypeScript!!",
+    message: "Hello this is locker api",
   });
 });
 
