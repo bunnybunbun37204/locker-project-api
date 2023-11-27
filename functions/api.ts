@@ -34,7 +34,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use(limiter);
 app.use(morgan("combined"));
 
-app.use(`/.netlify/functions/api/locker`, lockerApi);
-app.use(`/.netlify/functions/api/meeting`, meetingApi);
+app.use(`/.netlify/functions/api/locker`, lockerApi); //for locker project
+app.use(`/.netlify/functions/api/meeting`, meetingApi); //for meeting booking project
 
 export const handler = serverless(app);
