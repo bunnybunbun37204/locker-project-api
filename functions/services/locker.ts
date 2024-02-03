@@ -5,6 +5,7 @@ import { connectToGoogleSheet } from "../googleapi/connectToClient";
 import { booked, getDataRows } from "../googleapi/api";
 import { getUserById, singIn, singUp } from "../mongodbapi/api";
 import { connectToDatabase } from "../mongodbapi/connectToDb";
+import { serviceValidation } from "../chulasso/chula";
 
 connectToDatabase();
 
@@ -66,9 +67,22 @@ lockerApi.get("/getUser/:id", async (req: Request, res: Response) => {
   res.status(status).json({ message: message });
 });
 
+lockerApi.get("/login:ticket", async (req: Request, res: Response) => {
+  const ticket = req.params.ticket;
+  const {status, message} = await serviceValidation(ticket);
+  res.status(status).json({message: message})
+})
+
 lockerApi.get("/getData", async (req: Request, res: Response) => {
-  const { status, message } = await getDataRows(googleSheets, "Sheet1");
-  res.status(status).json({ message: message });
+  const messages : any = [];
+  let prevStatus = 0;
+  const zone = ["A", "B", "C"];
+  zone.map(async (value) => {
+    const { status, message } = await getDataRows(googleSheets, value);
+    prevStatus = prevStatus === status ? prevStatus : status;
+    messages.push(message)
+  })
+  res.status(prevStatus).json({ message: messages });
 });
 
 lockerApi.post("/booked", async (req: Request, res: Response) => {
